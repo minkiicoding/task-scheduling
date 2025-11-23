@@ -2,10 +2,25 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create Enums
-CREATE TYPE public.app_role AS ENUM ('admin', 'editor', 'viewer', 'super_admin');
-CREATE TYPE public.employee_position AS ENUM ('A1', 'A2', 'Semi-Senior', 'Senior', 'Supervisor', 'AM', 'M', 'SM', 'Partner', 'System Admin', 'Assistant Manager', 'Manager', 'Senior Manager', 'Admin', 'Director');
-CREATE TYPE public.job_type AS ENUM ('Interim', 'นับ Stock', 'Q1', 'Q2', 'Q3', 'Year-End Audit', 'YE', 'อื่น ๆ');
-CREATE TYPE public.leave_type AS ENUM ('Annual Leave', 'Personal Leave', 'Sick Leave', 'CPA Leave');
+-- Create Enums
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
+        CREATE TYPE public.app_role AS ENUM ('admin', 'editor', 'viewer', 'super_admin');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'employee_position') THEN
+        CREATE TYPE public.employee_position AS ENUM ('A1', 'A2', 'Semi-Senior', 'Senior', 'Supervisor', 'AM', 'M', 'SM', 'Partner', 'System Admin', 'Assistant Manager', 'Manager', 'Senior Manager', 'Admin', 'Director');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'job_type') THEN
+        CREATE TYPE public.job_type AS ENUM ('Interim', 'นับ Stock', 'Q1', 'Q2', 'Q3', 'Year-End Audit', 'YE', 'อื่น ๆ');
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'leave_type') THEN
+        CREATE TYPE public.leave_type AS ENUM ('Annual Leave', 'Personal Leave', 'Sick Leave', 'CPA Leave');
+    END IF;
+END$$;
 
 -- Create Tables
 
@@ -117,41 +132,68 @@ ALTER TABLE public.password_reset_requests ENABLE ROW LEVEL SECURITY;
 -- RLS POLICIES (Basic set based on migrations)
 
 -- Profiles
+DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
 CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE USING (
   EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'super_admin'))
 );
+
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Everyone can view profiles" ON public.profiles;
 CREATE POLICY "Everyone can view profiles" ON public.profiles FOR SELECT USING (true);
 
 -- Leaves
+DROP POLICY IF EXISTS "All users can view leaves" ON public.leaves;
 CREATE POLICY "All users can view leaves" ON public.leaves FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can create own leaves" ON public.leaves;
 CREATE POLICY "Users can create own leaves" ON public.leaves FOR INSERT WITH CHECK (auth.uid() = employee_id);
+
+DROP POLICY IF EXISTS "Users can update own leaves" ON public.leaves;
 CREATE POLICY "Users can update own leaves" ON public.leaves FOR UPDATE USING (auth.uid() = employee_id);
+
+DROP POLICY IF EXISTS "Users can delete own leaves" ON public.leaves;
 CREATE POLICY "Users can delete own leaves" ON public.leaves FOR DELETE USING (auth.uid() = employee_id);
+
+DROP POLICY IF EXISTS "Editors can manage all leaves" ON public.leaves;
 CREATE POLICY "Editors can manage all leaves" ON public.leaves FOR ALL USING (
   EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('editor', 'admin', 'super_admin'))
 );
 
 -- Assignments
+DROP POLICY IF EXISTS "All users can view assignments" ON public.assignments;
 CREATE POLICY "All users can view assignments" ON public.assignments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Editors can create assignments" ON public.assignments;
 CREATE POLICY "Editors can create assignments" ON public.assignments FOR INSERT WITH CHECK (
   EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('editor', 'admin', 'super_admin'))
 );
+
+DROP POLICY IF EXISTS "Editors can update assignments" ON public.assignments;
 CREATE POLICY "Editors can update assignments" ON public.assignments FOR UPDATE USING (
   EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('editor', 'admin', 'super_admin'))
 );
+
+DROP POLICY IF EXISTS "Editors can delete assignments" ON public.assignments;
 CREATE POLICY "Editors can delete assignments" ON public.assignments FOR DELETE USING (
   EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('editor', 'admin', 'super_admin'))
 );
 
 -- Holidays
+DROP POLICY IF EXISTS "Everyone can view holidays" ON public.holidays;
 CREATE POLICY "Everyone can view holidays" ON public.holidays FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Admins can manage holidays" ON public.holidays;
 CREATE POLICY "Admins can manage holidays" ON public.holidays FOR ALL USING (
   EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'super_admin'))
 );
 
 -- Position Role Mappings
+DROP POLICY IF EXISTS "Everyone can view position role mappings" ON public.position_role_mappings;
 CREATE POLICY "Everyone can view position role mappings" ON public.position_role_mappings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Super admins can manage position role mappings" ON public.position_role_mappings;
 CREATE POLICY "Super admins can manage position role mappings" ON public.position_role_mappings FOR ALL USING (
   EXISTS (SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'super_admin')
 );
