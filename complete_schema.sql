@@ -249,6 +249,7 @@ END;
 $function$;
 
 -- Trigger for sync role
+DROP TRIGGER IF EXISTS sync_user_role_on_profile_update ON public.profiles;
 CREATE TRIGGER sync_user_role_on_profile_update
   AFTER INSERT OR UPDATE OF position ON public.profiles
   FOR EACH ROW
