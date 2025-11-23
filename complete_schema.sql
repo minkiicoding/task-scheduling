@@ -159,20 +159,21 @@ CREATE POLICY "Super admins can manage position role mappings" ON public.positio
 -- FUNCTIONS
 
 -- Function to handle new user signup (Trigger)
+-- Function to handle new user signup (Trigger)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, name, role)
-  VALUES (new.id, new.email, new.raw_user_meta_data->>'name', 'viewer');
+  INSERT INTO public.profiles (id, email, name)
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'name');
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger for new user
--- DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
--- CREATE TRIGGER on_auth_user_created
---   AFTER INSERT ON auth.users
---   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
 -- Sync role from position function
 CREATE OR REPLACE FUNCTION public.sync_role_from_position()
