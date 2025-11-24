@@ -20,7 +20,7 @@ export const LoginScreen = ({ onSignIn }: LoginScreenProps) => {
   const handleLogin = async () => {
     setError('');
     setIsLoading(true);
-    
+
     try {
       const result = await onSignIn(employeeCode, password);
       if (result?.error) {
@@ -58,7 +58,7 @@ export const LoginScreen = ({ onSignIn }: LoginScreenProps) => {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
+
           <div className="space-y-2">
             <Label htmlFor="employeeCode">Employee Code / Username</Label>
             <div className="relative">
@@ -67,7 +67,7 @@ export const LoginScreen = ({ onSignIn }: LoginScreenProps) => {
                 id="employeeCode"
                 type="text"
                 className="pl-10"
-                placeholder="Enter your employee code or 'admin'"
+                placeholder="Enter your employee code, email, or 'admin'"
                 value={employeeCode}
                 onChange={(e) => setEmployeeCode(e.target.value)}
                 onKeyPress={handleKeyPress}
@@ -92,9 +92,9 @@ export const LoginScreen = ({ onSignIn }: LoginScreenProps) => {
           <Button onClick={handleLogin} className="w-full" disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
-          
+
           <p className="text-xs text-center text-muted-foreground mt-4">
-            Use your employee code or 'admin' username to sign in
+            Use your employee code, email, or 'admin' username to sign in
           </p>
         </CardContent>
       </Card>

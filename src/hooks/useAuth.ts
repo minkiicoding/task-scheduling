@@ -30,6 +30,24 @@ export const useAuth = () => {
 
   const signIn = async (employeeCodeOrUsername: string, password: string) => {
     try {
+      // Check if input is an email
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employeeCodeOrUsername);
+
+      if (isEmail) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: employeeCodeOrUsername,
+          password
+        });
+
+        if (error) {
+          toast.error('Invalid credentials');
+          return { error };
+        }
+
+        toast.success('Welcome back!');
+        return { data };
+      }
+
       // Check if it's admin login (using email)
       if (employeeCodeOrUsername === 'admin') {
         const { data, error } = await supabase.auth.signInWithPassword({
