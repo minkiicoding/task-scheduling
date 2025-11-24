@@ -48,21 +48,7 @@ export const useAuth = () => {
         return { data };
       }
 
-      // Check if it's admin login (using email)
-      if (employeeCodeOrUsername === 'admin') {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: 'admin@temp.local',
-          password
-        });
 
-        if (error) {
-          toast.error('Invalid credentials');
-          return { error };
-        }
-
-        toast.success('Welcome back, Admin!');
-        return { data };
-      }
 
       // Otherwise, login with employee code using edge function
       const { data, error } = await supabase.functions.invoke('login-with-employee-code', {
@@ -93,14 +79,14 @@ export const useAuth = () => {
       // Clear all local storage first
       localStorage.clear();
       sessionStorage.clear();
-      
+
       // Try to sign out from Supabase
       await supabase.auth.signOut();
-      
+
       // Reset state
       setUser(null);
       setSession(null);
-      
+
       toast.success('Signed out successfully');
     } catch (error) {
       // Even if signOut fails, clear local state
