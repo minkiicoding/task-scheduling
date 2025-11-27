@@ -143,6 +143,29 @@ serve(async (req) => {
 
         console.log('Admin user created successfully:', newUser.user?.id);
 
+        // Explicitly upsert profile to ensure employee_code is set
+        // This handles cases where the trigger might fail or if we want to update an existing user
+        if (newUser.user) {
+            const { error: profileError } = await supabaseAdmin
+                .from('profiles')
+                .upsert({
+                    id: newUser.user.id,
+                    email: email,
+                    name: name,
+                    employee_code: employeeCode,
+                    position: finalPosition,
+                    must_change_password: true,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (profileError) {
+                console.error('Error updating profile:', profileError);
+                // We don't fail the request if profile update fails, but we log it
+            } else {
+                console.log('Profile updated successfully for:', newUser.user.id);
+            }
+        }
+
         return new Response(
             JSON.stringify({
                 success: true,
