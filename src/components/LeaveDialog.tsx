@@ -64,7 +64,7 @@ export const LeaveDialog = ({
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
   // Format time strings like "09:00:00" to "09:00" for display
-  const formatTimeDisplay = (t?: string | null) => (t ? t.slice(0,5) : '');
+  const formatTimeDisplay = (t?: string | null) => (t ? t.slice(0, 5) : '');
 
   useEffect(() => {
     if (leave) {
@@ -108,7 +108,7 @@ export const LeaveDialog = ({
         return;
       }
     }
-    
+
     // For same day leave, validate that times are provided if user wants partial day
     if (isSameDay && (startTime || endTime)) {
       if (!startTime || !endTime) {
@@ -163,51 +163,51 @@ export const LeaveDialog = ({
 
   // Position hierarchy for comparison
   const positionHierarchy: EmployeePosition[] = ['A1', 'A2', 'Semi-Senior', 'Senior', 'Supervisor', 'Assistant Manager', 'Manager', 'Senior Manager', 'Director', 'Partner', 'Admin'];
-  
+
   const getPositionLevel = (position: EmployeePosition) => positionHierarchy.indexOf(position);
-  
+
   // Get leave employee's position
   const leaveEmployee = employees.find(e => e.id === leave?.employeeId);
   const leaveEmployeePosition = leaveEmployee?.position;
-  
+
   // Senior+ can request leave for others
   const isSeniorOrAbove = currentUserPosition && ['Senior', 'Supervisor', 'Assistant Manager', 'Manager', 'Senior Manager', 'Director', 'Partner', 'Admin'].includes(currentUserPosition);
-  
+
   // Supervisor+ can view leaves
   const isSupervisorOrAbove = currentUserPosition && ['Supervisor', 'Assistant Manager', 'Manager', 'Senior Manager', 'Director', 'Partner', 'Admin'].includes(currentUserPosition);
-  
+
   // Check if user's position is higher than leave employee's position
-  const isHigherPosition = currentUserPosition && leaveEmployeePosition && 
+  const isHigherPosition = currentUserPosition && leaveEmployeePosition &&
     getPositionLevel(currentUserPosition) > getPositionLevel(leaveEmployeePosition);
-  
+
   const isEditable = !leave || (canEdit && leave.status === 'pending');
   const isOwnLeave = leave?.employeeId === currentUserId;
   const isApprover = leave?.approvedBy === currentUserId;
   const isPartnerApprover = leave?.partnerApprovedBy === currentUserId;
-  
+
   // Can approve if:
   // 1. Own leave (can't approve yourself)
   // 2. Partner or Admin (can approve anyone)
   // 3. Supervisor+ with higher position than leave employee
   const canApproveLeave = !isOwnLeave && (
-    isPartner || 
-    currentUserPosition === 'Admin' || 
+    isPartner ||
+    currentUserPosition === 'Admin' ||
     (isSupervisorOrAbove && isHigherPosition)
   );
-  
+
   // Show approve button for non-partner approval (not requiring partner approval)
   const showApprove = leave && canApproveLeave && leave.status === 'pending' && !leave.partnerApprovalRequired;
   const showPartnerApprove = leave && isPartner && leave.status === 'pending' && leave.partnerApprovalRequired && !leave.partnerApprovedBy;
-  
+
   // Can modify (cancel/delete) if:
   // 1. Own leave
   // 2. Higher position than leave employee
   // 3. Partner or Admin (can modify anyone)
   const canModifyLeave = isOwnLeave || isPartner || currentUserPosition === 'Admin' || (isSupervisorOrAbove && isHigherPosition);
-  
+
   // Show cancel button if user can modify and leave is approved
   const showCancel = leave && canModifyLeave && leave.status === 'approved';
-  
+
   // Show delete button if user can modify and leave is pending
   const showDelete = leave && canModifyLeave && leave.status === 'pending';
 
@@ -234,8 +234,8 @@ export const LeaveDialog = ({
                       <span>• {emp.name}</span>
                       <span className={cn(
                         "text-xs px-2 py-0.5 rounded",
-                        l.status === 'approved' 
-                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
+                        l.status === 'approved'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                           : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
                       )}>
                         {l.status === 'approved' ? 'อนุมัติ' : 'รออนุมัติ'}
@@ -249,200 +249,189 @@ export const LeaveDialog = ({
 
           {!summaryOnly && (
             <>
-          <div className="space-y-2">
-            <Label htmlFor="employee">Employee</Label>
-            <Select
-              value={employeeId}
-              onValueChange={setEmployeeId}
-              disabled={!isEditable || (!canEdit && !isSeniorOrAbove && !leave)}
-            >
-              <SelectTrigger id="employee">
-                <SelectValue placeholder="Select employee" />
-              </SelectTrigger>
-              <SelectContent>
-                {employees
-                  .filter(emp => {
-                    // If creating new leave and user is Senior or above, show employees with lower position
-                    if (!leave && isSeniorOrAbove) {
-                      return emp.id === currentUserId || (emp.position && getPositionLevel(emp.position) < getPositionLevel(currentUserPosition!));
-                    }
-                    // Otherwise show all employees for admins/editors, or just current user
-                    return canEdit || emp.id === currentUserId;
-                  })
-                  .map(emp => (
-                    <SelectItem key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.position})
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="leaveType">Leave Type</Label>
-            <Select
-              value={leaveType}
-              onValueChange={setLeaveType}
-              disabled={!isEditable}
-            >
-              <SelectTrigger id="leaveType">
-                <SelectValue placeholder="Select leave type" />
-              </SelectTrigger>
-              <SelectContent>
-                {LEAVE_TYPES.map(type => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
-                    disabled={!isEditable}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, 'PPP') : 'Pick a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            <div className="space-y-2">
-              <Label>End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
-                    )}
-                    disabled={!isEditable}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, 'PPP') : 'Pick a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
-                    defaultMonth={endDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          {startDate && endDate && startDate.getTime() === endDate.getTime() && (
-            <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-950/20 border-y border-blue-200 dark:border-blue-800">
-              <div className="text-sm text-foreground font-medium">
-                การลาภายในวันเดียว (สามารถระบุเวลาได้)
+              <div className="space-y-2">
+                <Label htmlFor="employee">Employee</Label>
+                <Select
+                  value={employeeId}
+                  onValueChange={setEmployeeId}
+                  disabled={!isEditable || (!canEdit && !isSeniorOrAbove && !leave)}
+                >
+                  <SelectTrigger id="employee">
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees
+                      .filter(emp => {
+                        // If creating new leave and user is Senior or above, show employees with lower position
+                        if (!leave && isSeniorOrAbove) {
+                          return emp.id === currentUserId || (emp.position && getPositionLevel(emp.position) < getPositionLevel(currentUserPosition!));
+                        }
+                        // Otherwise show all employees for admins/editors, or just current user
+                        return canEdit || emp.id === currentUserId;
+                      })
+                      .map(emp => (
+                        <SelectItem key={emp.id} value={emp.id}>
+                          {emp.name} ({emp.position})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
-              {(leave?.startTime && leave?.endTime) || (startTime && endTime) ? (
-                <div className="space-y-3">
-                  <div className="p-3 bg-white dark:bg-gray-800 rounded-md border border-blue-300 dark:border-blue-700">
-                    <div className="text-xs text-muted-foreground mb-1">ช่วงเวลาที่ทำการลา</div>
-                    <div className="text-lg font-semibold text-foreground">
-                      {leave?.startTime && leave?.endTime 
-                        ? `${formatTimeDisplay(leave.startTime)} - ${formatTimeDisplay(leave.endTime)}`
-                        : `${startTime} - ${endTime}`
-                      }
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="startTime">เวลาเริ่มต้น</Label>
-                      <Input
-                        id="startTime"
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        className="w-full"
-                        disabled={!isEditable}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="endTime">เวลาสิ้นสุด</Label>
-                      <Input
-                        id="endTime"
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        className="w-full"
-                        disabled={!isEditable}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="startTime">เวลาเริ่มต้น (ถ้าลาไม่เต็มวัน)</Label>
-                      <Input
-                        id="startTime"
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        disabled={!isEditable}
-                        className="w-full"
-                        placeholder="09:00"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="endTime">เวลาสิ้นสุด (ถ้าลาไม่เต็มวัน)</Label>
-                      <Input
-                        id="endTime"
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        disabled={!isEditable}
-                        className="w-full"
-                        placeholder="17:00"
-                      />
-                    </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    หากไม่ระบุเวลา จะถือว่าเป็นการลาเต็มวัน (8 ชั่วโมง)
-                  </div>
-                </>
-              )}
-            </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="reason">Reason</Label>
-            <Textarea
-              id="reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Enter reason for leave"
-              rows={3}
-              disabled={!isEditable}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="leaveType">Leave Type</Label>
+                <Select
+                  value={leaveType}
+                  onValueChange={setLeaveType}
+                  disabled={!isEditable}
+                >
+                  <SelectTrigger id="leaveType">
+                    <SelectValue placeholder="Select leave type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAVE_TYPES.map(type => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !startDate && "text-muted-foreground"
+                        )}
+                        disabled={!isEditable}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, 'PPP') : 'Pick a date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !endDate && "text-muted-foreground"
+                        )}
+                        disabled={!isEditable}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, 'PPP') : 'Pick a date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        defaultMonth={endDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {startDate && endDate && startDate.getTime() === endDate.getTime() && (
+                <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-950/20 border-y border-blue-200 dark:border-blue-800">
+                  <div className="text-sm text-foreground font-medium">
+                    การลาภายในวันเดียว (สามารถระบุเวลาได้)
+                  </div>
+                  {(leave?.startTime && leave?.endTime) || (startTime && endTime) ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="startTime">เวลาเริ่มต้น</Label>
+                        <Input
+                          id="startTime"
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="w-full"
+                          disabled={!isEditable}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="endTime">เวลาสิ้นสุด</Label>
+                        <Input
+                          id="endTime"
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="w-full"
+                          disabled={!isEditable}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="startTime">เวลาเริ่มต้น (ถ้าลาไม่เต็มวัน)</Label>
+                          <Input
+                            id="startTime"
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            disabled={!isEditable}
+                            className="w-full"
+                            placeholder="09:00"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="endTime">เวลาสิ้นสุด (ถ้าลาไม่เต็มวัน)</Label>
+                          <Input
+                            id="endTime"
+                            type="time"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            disabled={!isEditable}
+                            className="w-full"
+                            placeholder="17:00"
+                          />
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        หากไม่ระบุเวลา จะถือว่าเป็นการลาเต็มวัน (8 ชั่วโมง)
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="reason">Reason</Label>
+                <Textarea
+                  id="reason"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Enter reason for leave"
+                  rows={3}
+                  disabled={!isEditable}
+                />
+              </div>
             </>
           )}
 
@@ -453,22 +442,22 @@ export const LeaveDialog = ({
                 <span className="text-foreground font-medium">Status:</span>
                 <span className={cn(
                   "font-medium",
-                  leave.status === 'approved' ? 'text-green-700 dark:text-green-300' : 
-                  leave.status === 'cancelled' ? 'text-red-600' : 
-                  'text-yellow-600'
+                  leave.status === 'approved' ? 'text-green-700 dark:text-green-300' :
+                    leave.status === 'cancelled' ? 'text-red-600' :
+                      'text-yellow-600'
                 )}>
-                  {leave.status === 'approved' ? 'Approved' : 
-                   leave.status === 'cancelled' ? 'Cancelled' : 
-                   'Pending'}
+                  {leave.status === 'approved' ? 'Approved' :
+                    leave.status === 'cancelled' ? 'Cancelled' :
+                      'Pending'}
                 </span>
-    </div>
-    {leave.startTime && leave.endTime && (
-      <div className="text-sm text-foreground">
-        ช่วงเวลาที่ลา: {formatTimeDisplay(leave.startTime)} - {formatTimeDisplay(leave.endTime)}
-      </div>
-    )}
-    {leave.partnerApprovalRequired && (
-      <div className="text-sm text-orange-600 dark:text-orange-400 font-medium">
+              </div>
+              {leave.startTime && leave.endTime && (
+                <div className="text-sm text-foreground">
+                  ช่วงเวลาที่ลา: {formatTimeDisplay(leave.startTime)} - {formatTimeDisplay(leave.endTime)}
+                </div>
+              )}
+              {leave.partnerApprovalRequired && (
+                <div className="text-sm text-orange-600 dark:text-orange-400 font-medium">
                 </div>
               )}
               {leave.approvedBy && (
@@ -490,50 +479,50 @@ export const LeaveDialog = ({
             <Button variant="outline" onClick={onClose}>Close</Button>
           ) : (
             <>
-            {showDelete && (
-              <Button
-                variant="destructive"
-                onClick={() => setDeleteConfirmOpen(true)}
-                className="mr-auto"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
+              {showDelete && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  className="mr-auto"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+              {showApprove && (
+                <Button
+                  variant="default"
+                  onClick={handleApprove}
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Approve
+                </Button>
+              )}
+              {showPartnerApprove && (
+                <Button
+                  variant="default"
+                  onClick={handlePartnerApprove}
+                >
+                  <Check className="w-4 h-4 mr-2" />
+                  Partner Approve
+                </Button>
+              )}
+              {showCancel && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setCancelConfirmOpen(true)}
+                >
+                  Cancel Leave
+                </Button>
+              )}
+              {isEditable && (
+                <Button onClick={handleSave}>
+                  Save Leave Request
+                </Button>
+              )}
+              <Button variant="outline" onClick={onClose}>
+                {isEditable ? 'Cancel' : 'Close'}
               </Button>
-            )}
-            {showApprove && (
-              <Button
-                variant="default"
-                onClick={handleApprove}
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Approve
-              </Button>
-            )}
-            {showPartnerApprove && (
-              <Button
-                variant="default"
-                onClick={handlePartnerApprove}
-              >
-                <Check className="w-4 h-4 mr-2" />
-                Partner Approve
-              </Button>
-            )}
-            {showCancel && (
-              <Button
-                variant="destructive"
-                onClick={() => setCancelConfirmOpen(true)}
-              >
-                Cancel Leave
-              </Button>
-            )}
-            {isEditable && (
-              <Button onClick={handleSave}>
-                Save Leave Request
-              </Button>
-            )}
-            <Button variant="outline" onClick={onClose}>
-              {isEditable ? 'Cancel' : 'Close'}
-            </Button>
             </>
           )}
         </DialogFooter>
@@ -568,7 +557,7 @@ export const LeaveDialog = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={() => {
                 if (leave && onCancel) {
                   onCancel(leave.id);

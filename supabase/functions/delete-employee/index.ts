@@ -79,9 +79,46 @@ serve(async (req) => {
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(employeeId);
 
     if (deleteError) {
-      console.error('Failed to delete employee:', deleteError);
+      console.error('Failed to delete from auth.users:', deleteError);
+
+      // If user doesn't exist in auth.users, try to delete from profiles directly
+      if (deleteError.message.includes('User not found')) {
+        console.log('User not found in auth.users, deleting from profiles directly...');
+
+        // Delete from user_roles first
+        const { error: roleDeleteError } = await supabaseAdmin
+          .from('user_roles')
+          .delete()
+          .eq('user_id', employeeId);
+
+        if (roleDeleteError) {
+          console.error('Error deleting user_roles:', roleDeleteError);
+        }
+
+        // Delete from profiles
+        const { error: profileDeleteError } = await supabaseAdmin
+          .from('profiles')
+          .delete()
+          .eq('id', employeeId);
+
+        if (profileDeleteError) {
+          console.error('Error deleting profile:', profileDeleteError);
+          return new Response(
+            JSON.stringify({ error: `ไม่สามารถลบพนักงานได้: ${profileDeleteError.message}` }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        console.log(`Profile deleted (no auth user): ${employeeId} by admin: ${user.id}`);
+
+        return new Response(
+          JSON.stringify({ success: true }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       return new Response(
-        JSON.stringify({ error: 'ไม่สามารถลบพนักงานได้' }),
+        JSON.stringify({ error: `ไม่สามารถลบพนักงานได้: ${deleteError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

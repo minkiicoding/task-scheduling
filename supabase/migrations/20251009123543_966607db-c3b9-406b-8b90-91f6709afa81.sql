@@ -25,7 +25,13 @@ USING (true);
 CREATE POLICY "Admins can manage holidays" 
 ON public.holidays 
 FOR ALL 
-USING (has_role(auth.uid(), 'admin'::app_role));
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles 
+    WHERE user_id = auth.uid() 
+    AND role = 'admin'::app_role
+  )
+);
 
 COMMENT ON TABLE public.holidays IS 'Public holidays that require partner approval for assignments';
 COMMENT ON COLUMN public.assignments.partner_approval_required IS 'True if assignment requires partner approval (after 6pm, weekend, or holiday)';

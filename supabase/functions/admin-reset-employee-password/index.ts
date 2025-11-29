@@ -82,8 +82,9 @@ serve(async (req) => {
       );
     }
 
-    // Generate temporary password (using employee code + 1234 as pattern)
-    const tempPassword = `${profile.employee_code}1234`;
+    // Generate temporary password (must meet Supabase password requirements: min 6 characters)
+    // Using simple 123456 that users will change on first login
+    const tempPassword = '123456';
 
     // Reset password
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
@@ -94,7 +95,7 @@ serve(async (req) => {
     if (updateError) {
       console.error('Failed to reset password:', updateError);
       return new Response(
-        JSON.stringify({ error: 'ไม่สามารถรีเซ็ตรหัสผ่านได้' }),
+        JSON.stringify({ error: `ไม่สามารถรีเซ็ตรหัสผ่านได้: ${updateError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -112,8 +113,8 @@ serve(async (req) => {
     console.log(`Password reset for employee: ${employeeId} (${profile.employee_code}) by admin: ${user.id}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         employeeCode: profile.employee_code,
         tempPassword: tempPassword,
         name: profile.name

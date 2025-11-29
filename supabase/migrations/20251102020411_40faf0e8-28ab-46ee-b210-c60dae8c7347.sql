@@ -25,8 +25,20 @@ CREATE POLICY "Super admins can manage position role mappings"
 ON public.position_role_mappings
 FOR ALL
 TO authenticated
-USING (has_role(auth.uid(), 'super_admin'::app_role))
-WITH CHECK (has_role(auth.uid(), 'super_admin'::app_role));
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles 
+    WHERE user_id = auth.uid() 
+    AND role = 'super_admin'::app_role
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.user_roles 
+    WHERE user_id = auth.uid() 
+    AND role = 'super_admin'::app_role
+  )
+);
 
 -- Insert default mappings with updated roles
 INSERT INTO public.position_role_mappings (position, role) VALUES

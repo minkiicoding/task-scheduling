@@ -30,13 +30,25 @@ WITH CHECK (employee_id = auth.uid());
 CREATE POLICY "Admins can view all reset requests"
 ON public.password_reset_requests
 FOR SELECT
-USING (has_role(auth.uid(), 'admin'::app_role));
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles 
+    WHERE user_id = auth.uid() 
+    AND role = 'admin'::app_role
+  )
+);
 
 -- Admins can update reset requests
 CREATE POLICY "Admins can update reset requests"
 ON public.password_reset_requests
 FOR UPDATE
-USING (has_role(auth.uid(), 'admin'::app_role));
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles 
+    WHERE user_id = auth.uid() 
+    AND role = 'admin'::app_role
+  )
+);
 
 -- Create trigger for automatic timestamp updates
 CREATE TRIGGER update_password_reset_requests_updated_at

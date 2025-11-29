@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
@@ -19,7 +20,7 @@ serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     // Parse request body
@@ -28,11 +29,33 @@ serve(async (req) => {
     console.log('Login attempt for employee code:', employeeCode);
 
     // Get email from employee code
-    const { data: email, error: emailError } = await supabase
+    let email: string | null = null;
+
+    const { data: rpcEmail, error: emailError } = await supabase
       .rpc('get_email_by_employee_code', { _employee_code: employeeCode });
 
-    if (emailError || !email) {
-      console.error('Employee code not found:', employeeCode, emailError);
+    if (!emailError && rpcEmail) {
+      email = rpcEmail;
+      console.log('Found email via RPC:', email);
+    } else {
+      console.log('RPC failed or returned null, trying fallback...');
+      // Fallback: List users and check metadata
+      const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+
+      if (!listError && users) {
+        const user = users.find(u =>
+          (u.user_metadata?.employee_code && u.user_metadata.employee_code.toLowerCase() === employeeCode.toLowerCase()) ||
+          (u.user_metadata?.employeeCode && u.user_metadata.employeeCode.toLowerCase() === employeeCode.toLowerCase())
+        );
+        if (user) {
+          email = user.email || null;
+          console.log('Found email via fallback metadata:', email);
+        }
+      }
+    }
+
+    if (!email) {
+      console.error('Employee code not found:', employeeCode);
       return new Response(
         JSON.stringify({ error: 'Invalid employee code or password' }),
         {
@@ -41,8 +64,6 @@ serve(async (req) => {
         }
       );
     }
-
-    console.log('Found email for employee code:', email);
 
     // Sign in with email and password
     const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -53,7 +74,7 @@ serve(async (req) => {
     if (signInError) {
       console.error('Sign in error:', signInError);
       return new Response(
-        JSON.stringify({ error: 'Invalid employee code or password' }),
+        JSON.stringify({ error: `Sign in failed: ${signInError.message}` }),
         {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -64,7 +85,7 @@ serve(async (req) => {
     console.log('Sign in successful for:', employeeCode);
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         session: data.session,
         user: data.user
       }),

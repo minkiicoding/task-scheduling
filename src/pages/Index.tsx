@@ -44,7 +44,7 @@ const Index = () => {
   const { profiles, isLoading: profilesLoading } = useProfiles();
   const { clients, isLoading: clientsLoading, addClient, updateClient, deleteClient } = useClients();
   const { canEdit, canApprove, isPartner, role, isLoading: roleLoading } = useUserRole(user?.id);
-  
+
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -56,7 +56,7 @@ const Index = () => {
   const [clientToDelete, setClientToDelete] = useState<{ id: string; name: string } | null>(null);
   const [deleteEmployeeConfirmOpen, setDeleteEmployeeConfirmOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<{ id: string; name: string } | null>(null);
-  const [resetPasswordResult, setResetPasswordResult] = useState<{employeeCode: string; tempPassword: string; name: string} | null>(null);
+  const [resetPasswordResult, setResetPasswordResult] = useState<{ employeeCode: string; tempPassword: string; name: string } | null>(null);
   const [deleteOldAssignmentsOpen, setDeleteOldAssignmentsOpen] = useState(false);
   const [isDeletingOldAssignments, setIsDeletingOldAssignments] = useState(false);
   const [deleteStartDate, setDeleteStartDate] = useState('');
@@ -110,12 +110,12 @@ const Index = () => {
     setIsCreatingUser(true);
     try {
       const { supabase } = await import('@/integrations/supabase/client');
-      
+
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: { 
-          employeeCode: newEmployee.employeeCode, 
-          name: newEmployee.name, 
-          position: newEmployee.position 
+        body: {
+          employeeCode: newEmployee.employeeCode,
+          name: newEmployee.name,
+          position: newEmployee.position
         }
       });
 
@@ -124,7 +124,7 @@ const Index = () => {
 
       toast.success('Employee created successfully with password: 1234');
       setNewEmployee({ name: '', position: 'A1', employeeCode: '' });
-      
+
       setTimeout(() => {
         window.location.reload();
       }, 1500);
@@ -215,7 +215,7 @@ const Index = () => {
       toast.success('ลบพนักงานสำเร็จ');
       setDeleteEmployeeConfirmOpen(false);
       setEmployeeToDelete(null);
-      
+
       setTimeout(() => {
         window.location.reload();
       }, 1500);
@@ -232,7 +232,7 @@ const Index = () => {
 
   const handleUpdateClient = () => {
     if (!editingClient) return;
-    
+
     updateClient({
       id: editingClient.id,
       data: {
@@ -241,7 +241,7 @@ const Index = () => {
         client_code: editingClient.clientCode
       }
     });
-    
+
     setEditClientDialogOpen(false);
     setEditingClient(null);
   };
@@ -260,7 +260,7 @@ const Index = () => {
     setIsDeletingOldAssignments(true);
     try {
       const { supabase } = await import('@/integrations/supabase/client');
-      
+
       // Delete assignments within the selected date range
       const { error } = await supabase
         .from('assignments')
@@ -274,7 +274,7 @@ const Index = () => {
       setDeleteOldAssignmentsOpen(false);
       setDeleteStartDate('');
       setDeleteEndDate('');
-      
+
       setTimeout(() => {
         window.location.reload();
       }, 1500);
@@ -329,7 +329,7 @@ const Index = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
       <Navigation canEdit={canEdit} userPosition={currentProfile?.position} isPartner={isPartner} />
-      
+
       {/* Admin Dashboard Header */}
       <div className="border-b border-border bg-card p-4">
         <div className="flex items-center justify-between">
@@ -400,8 +400,8 @@ const Index = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Position</Label>
-                    <Select 
-                      value={newEmployee.position} 
+                    <Select
+                      value={newEmployee.position}
                       onValueChange={(value: any) => setNewEmployee({ ...newEmployee, position: value })}
                       disabled={isCreatingUser}
                     >
@@ -446,48 +446,48 @@ const Index = () => {
                   </div>
                 ) : (
                   filteredProfiles.map(emp => (
-                  <div key={emp.id} className="p-4 flex items-center justify-between hover:bg-secondary/50">
-                    <div>
-                      <div className="font-medium">{emp.name}</div>
-                      <div className="text-sm text-muted-foreground">{emp.position}</div>
-                      {emp.employeeCode && (
-                        <div className="text-xs text-muted-foreground">Code: {emp.employeeCode}</div>
-                      )}
+                    <div key={emp.id} className="p-4 flex items-center justify-between hover:bg-secondary/50">
+                      <div>
+                        <div className="font-medium">{emp.name}</div>
+                        <div className="text-sm text-muted-foreground">{emp.position}</div>
+                        {emp.employeeCode && (
+                          <div className="text-xs text-muted-foreground">Code: {emp.employeeCode}</div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditEmployee(emp)}
+                          title="แก้ไขข้อมูล"
+                        >
+                          <Pencil className="w-4 h-4 text-primary" />
+                        </Button>
+                        {(role === 'admin' || role === 'super_admin') && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleResetPassword(emp)}
+                              title="รีเซ็ตรหัสผ่าน"
+                            >
+                              <RefreshCw className="w-4 h-4 text-orange-500" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEmployeeToDelete({ id: emp.id, name: emp.name });
+                                setDeleteEmployeeConfirmOpen(true);
+                              }}
+                              title="ลบพนักงาน"
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditEmployee(emp)}
-                        title="แก้ไขข้อมูล"
-                      >
-                        <Pencil className="w-4 h-4 text-primary" />
-                      </Button>
-                      {(role === 'admin' || role === 'super_admin') && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleResetPassword(emp)}
-                            title="รีเซ็ตรหัสผ่าน"
-                          >
-                            <RefreshCw className="w-4 h-4 text-orange-500" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEmployeeToDelete({ id: emp.id, name: emp.name });
-                              setDeleteEmployeeConfirmOpen(true);
-                            }}
-                            title="ลบพนักงาน"
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
                   ))
                 )}
               </div>
@@ -559,38 +559,38 @@ const Index = () => {
                   </div>
                 ) : (
                   filteredClients.map(client => (
-                  <div key={client.id} className="p-4 flex items-center justify-between hover:bg-secondary/50">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-4 h-4 rounded ${client.colorClass}`} />
-                      <div>
-                        <div className="font-medium">{client.name}</div>
-                        {client.clientCode && (
-                          <div className="text-xs text-muted-foreground">Code: {client.clientCode}</div>
-                        )}
+                    <div key={client.id} className="p-4 flex items-center justify-between hover:bg-secondary/50">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-4 h-4 rounded ${client.colorClass}`} />
+                        <div>
+                          <div className="font-medium">{client.name}</div>
+                          {client.clientCode && (
+                            <div className="text-xs text-muted-foreground">Code: {client.clientCode}</div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditClient(client)}
+                          title="แก้ไขข้อมูล"
+                        >
+                          <Pencil className="w-4 h-4 text-primary" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setClientToDelete({ id: client.id, name: client.name });
+                            setDeleteClientConfirmOpen(true);
+                          }}
+                          title="ลบลูกค้า"
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditClient(client)}
-                        title="แก้ไขข้อมูล"
-                      >
-                        <Pencil className="w-4 h-4 text-primary" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setClientToDelete({ id: client.id, name: client.name });
-                          setDeleteClientConfirmOpen(true);
-                        }}
-                        title="ลบลูกค้า"
-                      >
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
                   ))
                 )}
               </div>
@@ -599,23 +599,6 @@ const Index = () => {
 
           <TabsContent value="holidays" className="space-y-4 mt-6">
             <HolidayManagement />
-            
-            {/* Data Management Section */}
-            {(role === 'admin' || role === 'super_admin') && (
-              <div className="border border-border rounded-lg p-6 space-y-4 bg-card mt-6">
-                <h3 className="font-semibold text-lg text-destructive">Data Management</h3>
-                <p className="text-sm text-muted-foreground">
-                  ลบข้อมูล Assignment ตามช่วงเวลาที่ต้องการ
-                </p>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => setDeleteOldAssignmentsOpen(true)}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  ลบข้อมูล Assignment ตามช่วงเวลา
-                </Button>
-              </div>
-            )}
           </TabsContent>
 
           {(role === 'admin' || role === 'super_admin') && (
@@ -722,7 +705,7 @@ const Index = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeletingOldAssignments}>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDeleteOldAssignments}
               disabled={isDeletingOldAssignments}
               className="bg-destructive hover:bg-destructive/90"
@@ -759,8 +742,8 @@ const Index = () => {
               </div>
               <div className="space-y-2">
                 <Label>สี</Label>
-                <Select 
-                  value={editingClient.colorClass} 
+                <Select
+                  value={editingClient.colorClass}
                   onValueChange={(value) => setEditingClient({ ...editingClient, colorClass: value })}
                 >
                   <SelectTrigger>
@@ -827,7 +810,7 @@ const Index = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeletingOldAssignments}>ยกเลิก</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDeleteOldAssignments}
               disabled={isDeletingOldAssignments}
               className="bg-destructive hover:bg-destructive/90"

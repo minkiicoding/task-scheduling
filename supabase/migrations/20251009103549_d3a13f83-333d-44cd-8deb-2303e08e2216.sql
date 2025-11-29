@@ -26,7 +26,11 @@ DECLARE
   _result json;
 BEGIN
   -- Check if caller is admin
-  IF NOT has_role(auth.uid(), 'admin') THEN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_roles 
+    WHERE user_id = auth.uid() 
+    AND role = 'admin'
+  ) THEN
     RAISE EXCEPTION 'Only admins can create user accounts';
   END IF;
 

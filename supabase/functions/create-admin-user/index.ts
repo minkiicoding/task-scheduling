@@ -124,32 +124,48 @@ serve(async (req) => {
         const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
             password: finalPassword,
-            email_confirm: true,
-            user_metadata: {
-                name,
-                position: finalPosition,
-                employee_code: employeeCode,
-                must_change_password: true
-            }
+            email_confirm: true
         });
+
+        let userId: string | undefined;
 
         if (createError) {
             console.error('Error creating user:', createError);
-            return new Response(JSON.stringify({ error: createError.message }), {
-                status: 400,
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
+            // If user already exists, try to find it and update
+            if (createError.message.includes('already been registered')) {
+                console.log('User already exists, attempting to update...');
+                const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+                const existingUser = users?.find(u => u.email === email);
+
+                if (existingUser) {
+                    userId = existingUser.id;
+                    // Update password
+                    await supabaseAdmin.auth.admin.updateUserById(userId, { password: finalPassword });
+                    console.log('Updated password for existing user:', userId);
+                } else {
+                    return new Response(JSON.stringify({ error: 'User exists but could not be found in list' }), {
+                        status: 500,
+                        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    });
+                }
+            } else {
+                return new Response(JSON.stringify({ error: createError.message }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+            }
+        } else {
+            userId = newUser.user?.id;
         }
 
-        console.log('Admin user created successfully:', newUser.user?.id);
+        if (userId) {
+            console.log('Admin user created/updated successfully:', userId);
 
-        // Explicitly upsert profile to ensure employee_code is set
-        // This handles cases where the trigger might fail or if we want to update an existing user
-        if (newUser.user) {
+            // Explicitly upsert profile to ensure employee_code is set
             const { error: profileError } = await supabaseAdmin
                 .from('profiles')
                 .upsert({
-                    id: newUser.user.id,
+                    id: userId,
                     email: email,
                     name: name,
                     employee_code: employeeCode,
@@ -160,17 +176,41 @@ serve(async (req) => {
 
             if (profileError) {
                 console.error('Error updating profile:', profileError);
-                // We don't fail the request if profile update fails, but we log it
+                return new Response(JSON.stringify({ error: `Profile update failed: ${profileError.message}` }), {
+                    status: 500,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
             } else {
-                console.log('Profile updated successfully for:', newUser.user.id);
+                console.log('Profile updated successfully for:', userId);
+            }
+
+            // Ensure user has correct role in user_roles
+            // Map position to role
+            let role = 'viewer';
+            if (finalPosition === 'Admin') role = 'super_admin';
+            else if (finalPosition === 'Partner' || finalPosition === 'Director') role = 'admin';
+            else if (['Senior Manager', 'Manager', 'Assistant Manager', 'Supervisor', 'Senior'].includes(finalPosition)) role = 'editor';
+
+            const { error: roleError } = await supabaseAdmin
+                .from('user_roles')
+                .upsert({
+                    user_id: userId,
+                    role: role
+                }, { onConflict: 'user_id' }); // Assuming user_id is unique or we want to replace
+
+            if (roleError) {
+                console.error('Error updating user_roles:', roleError);
+                // Don't fail the whole request, but log it
+            } else {
+                console.log('User role updated successfully for:', userId);
             }
         }
 
         return new Response(
             JSON.stringify({
                 success: true,
-                user: newUser.user,
-                message: `Admin user created with position ${finalPosition}`
+                userId: userId,
+                message: `Admin user created/updated with position ${finalPosition}`
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

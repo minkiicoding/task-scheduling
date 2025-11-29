@@ -75,22 +75,22 @@ export const AssignmentReports = () => {
     if (!startTime || !endTime) return 0;
     const [startHour, startMin] = startTime.split(':').map(Number);
     const [endHour, endMin] = endTime.split(':').map(Number);
-    
+
     let hours = endHour - startHour;
     let minutes = endMin - startMin;
-    
+
     if (minutes < 0) {
       hours -= 1;
       minutes += 60;
     }
-    
+
     const totalHours = hours + minutes / 60;
-    
+
     // Deduct 1 hour for lunch if working period is 4+ hours
     if (totalHours >= 4) {
       return Math.max(0, totalHours - 1);
     }
-    
+
     return totalHours;
   };
 
@@ -106,7 +106,7 @@ export const AssignmentReports = () => {
 
     const employeeData = filteredProfiles.map(profile => {
       // Filter assignments for this employee in date range
-      const employeeAssignments = assignments?.filter(a => 
+      const employeeAssignments = assignments?.filter(a =>
         Array.isArray(a.employee_ids) &&
         a.employee_ids.includes(profile.id) &&
         a.date && isWithinInterval(parseISO(a.date), dateInterval)
@@ -142,7 +142,7 @@ export const AssignmentReports = () => {
       const leaveHours = employeeLeaves.reduce((acc, l) => {
         const start = parseISO(l.start_date as any);
         const end = parseISO(l.end_date as any);
-        
+
         // If partial day leave
         if (l.start_time && l.end_time) {
           const hours = calculateHours(l.start_time as any, l.end_time as any);
@@ -234,7 +234,7 @@ export const AssignmentReports = () => {
 
     // Filter assignments for non-charge activities
     const nonChargeAssignments = assignments?.filter(a =>
-      !a.client_id && 
+      !a.client_id &&
       a.activity_name &&
       a.date && isWithinInterval(parseISO(a.date), dateInterval)
     ) || [];
@@ -244,7 +244,7 @@ export const AssignmentReports = () => {
 
     nonChargeAssignments.forEach(assignment => {
       const activityName = assignment.activity_name!;
-      
+
       if (!activityMap[activityName]) {
         activityMap[activityName] = {
           activityName,
@@ -255,11 +255,11 @@ export const AssignmentReports = () => {
 
       (Array.isArray(assignment.employee_ids) ? assignment.employee_ids : []).forEach(empId => {
         if (selectedEmployeeIds.length > 0 && !selectedEmployeeIds.includes(empId)) return;
-        
+
         const employee = profiles?.find(p => p.id === empId);
         if (employee) {
           const hours = calculateHours(assignment.start_time, assignment.end_time);
-          
+
           if (!activityMap[activityName].employees[empId]) {
             activityMap[activityName].employees[empId] = {
               name: employee.name,
@@ -268,7 +268,7 @@ export const AssignmentReports = () => {
               employeeCode: employee.employee_code || employee.name
             };
           }
-          
+
           activityMap[activityName].employees[empId].hours += hours;
           activityMap[activityName].totalHours += hours;
         }
@@ -305,10 +305,10 @@ export const AssignmentReports = () => {
       employeeLeaves.forEach(leave => {
         const start = parseISO(leave.start_date as any);
         const end = parseISO(leave.end_date as any);
-        
+
         let hours = 0;
         let days = 0;
-        
+
         // If partial day leave
         if (leave.start_time && leave.end_time) {
           hours = calculateHours(leave.start_time as any, leave.end_time as any);
@@ -360,23 +360,23 @@ export const AssignmentReports = () => {
   const exportEmployeeReportToCSV = () => {
     const headers = ['Employee Code', 'Name', 'Position', 'Category', 'Detail', 'Hours'];
     const rows: string[][] = [];
-    
+
     employeeReportData.forEach(emp => {
       // Client hours
       Object.entries(emp.clientHours).forEach(([client, hours]) => {
         rows.push([emp.employeeCode, emp.name, emp.position, 'Client', client, (hours as number).toFixed(2)]);
       });
-      
+
       // Non-charge hours
       Object.entries(emp.nonChargeHours).forEach(([activity, hours]) => {
         rows.push([emp.employeeCode, emp.name, emp.position, 'Non-Charge', activity, (hours as number).toFixed(2)]);
       });
-      
+
       // Leave hours
       Object.entries(emp.leaveHours).forEach(([leaveType, hours]) => {
         rows.push([emp.employeeCode, emp.name, emp.position, 'Leave', leaveType, (hours as number).toFixed(2)]);
       });
-      
+
       // Total row
       rows.push([
         emp.employeeCode,
@@ -386,13 +386,13 @@ export const AssignmentReports = () => {
         '',
         (emp.totalClientHours + emp.totalNonChargeHours + emp.totalLeaveHours).toFixed(2)
       ]);
-      
+
       // Empty row for spacing
       rows.push(['', '', '', '', '', '']);
     });
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -403,7 +403,7 @@ export const AssignmentReports = () => {
   const exportClientReportToCSV = () => {
     const headers = ['Client Code', 'Client Name', 'Employee', 'Position', 'Hours'];
     const rows: string[][] = [];
-    
+
     clientReportData.forEach(client => {
       client.employees.forEach((emp: any) => {
         rows.push([
@@ -417,7 +417,7 @@ export const AssignmentReports = () => {
     });
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -428,7 +428,7 @@ export const AssignmentReports = () => {
   const exportNonChargeReportToCSV = () => {
     const headers = ['Activity', 'Employee Code', 'Employee', 'Position', 'Hours'];
     const rows: string[][] = [];
-    
+
     nonChargeReportData.forEach(activity => {
       activity.employees.forEach((emp: any) => {
         rows.push([
@@ -442,7 +442,7 @@ export const AssignmentReports = () => {
     });
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -453,7 +453,7 @@ export const AssignmentReports = () => {
   const exportLeaveReportToCSV = () => {
     const headers = ['Employee Code', 'Employee', 'Position', 'Leave Type', 'Start Date', 'End Date', 'Start Time', 'End Time', 'Days', 'Hours', 'Reason', 'Approved By', 'Partner Approved By', 'Status'];
     const rows: string[][] = [];
-    
+
     leaveReportData.forEach(leave => {
       rows.push([
         leave.employeeCode,
@@ -474,7 +474,7 @@ export const AssignmentReports = () => {
     });
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -511,7 +511,7 @@ export const AssignmentReports = () => {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>ประเภทรายงาน</Label>
               <RadioGroup value={reportType} onValueChange={(value: 'employee' | 'client' | 'noncharge' | 'leave') => setReportType(value)}>
@@ -575,8 +575,8 @@ export const AssignmentReports = () => {
               <>
                 <div className="flex justify-between items-center gap-4">
                   <div className="text-sm text-muted-foreground">
-                    {showReports && employeeReportData.length > 0 
-                      ? `พบ ${employeeReportData.length} พนักงาน` 
+                    {showReports && employeeReportData.length > 0
+                      ? `พบ ${employeeReportData.length} พนักงาน`
                       : 'กรุณากด "สร้างรายงาน" เพื่อดูข้อมูล'}
                   </div>
                   <div className="flex items-center gap-2">
@@ -608,90 +608,90 @@ export const AssignmentReports = () => {
                 ) : (
                   <div className="space-y-6">
                     {employeeReportData
-                      .filter(emp => 
-                        searchTerm === '' || 
+                      .filter(emp =>
+                        searchTerm === '' ||
                         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         emp.employeeCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         emp.position.toLowerCase().includes(searchTerm.toLowerCase())
                       )
                       .map((emp, idx) => (
-                      <Card key={idx}>
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle>{emp.name}</CardTitle>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {emp.employeeCode} | {emp.position}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold">
-                                {emp.grandTotal.toFixed(2)}
+                        <Card key={idx}>
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle>{emp.name}</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {emp.employeeCode} | {emp.position}
+                                </p>
                               </div>
-                              <p className="text-sm text-muted-foreground">ชั่วโมงรวม</p>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          {Object.keys(emp.clientHours).length > 0 && (
-                            <div>
-                              <h4 className="font-semibold mb-2 flex items-center justify-between">
-                                งานลูกค้า (Client Hours)
-                                <span className="text-sm font-normal text-muted-foreground">
-                                  {emp.totalClientHours.toFixed(2)} ชม.
-                                </span>
-                              </h4>
-                              <div className="space-y-1">
-                                {Object.entries(emp.clientHours).map(([client, hours]) => (
-                                  <div key={client} className="flex justify-between text-sm pl-4">
-                                    <span>• {client}</span>
-                                    <span className="font-medium">{(hours as number).toFixed(2)} ชม.</span>
-                                  </div>
-                                ))}
+                              <div className="text-right">
+                                <div className="text-2xl font-bold">
+                                  {emp.grandTotal.toFixed(2)}
+                                </div>
+                                <p className="text-sm text-muted-foreground">ชั่วโมงรวม</p>
                               </div>
                             </div>
-                          )}
-                          
-                          {Object.keys(emp.nonChargeHours).length > 0 && (
-                            <div>
-                              <h4 className="font-semibold mb-2 flex items-center justify-between">
-                                งานไม่คิดค่าใช้จ่าย (Non-Charge)
-                                <span className="text-sm font-normal text-muted-foreground">
-                                  {emp.totalNonChargeHours.toFixed(2)} ชม.
-                                </span>
-                              </h4>
-                              <div className="space-y-1">
-                                {Object.entries(emp.nonChargeHours).map(([activity, hours]) => (
-                                  <div key={activity} className="flex justify-between text-sm pl-4">
-                                    <span>• {activity}</span>
-                                    <span className="font-medium">{(hours as number).toFixed(2)} ชม.</span>
-                                  </div>
-                                ))}
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            {Object.keys(emp.clientHours).length > 0 && (
+                              <div>
+                                <h4 className="font-semibold mb-2 flex items-center justify-between">
+                                  งานลูกค้า (Client Hours)
+                                  <span className="text-sm font-normal text-muted-foreground">
+                                    {emp.totalClientHours.toFixed(2)} ชม.
+                                  </span>
+                                </h4>
+                                <div className="space-y-1">
+                                  {Object.entries(emp.clientHours).map(([client, hours]) => (
+                                    <div key={client} className="flex justify-between text-sm pl-4">
+                                      <span>• {client}</span>
+                                      <span className="font-medium">{(hours as number).toFixed(2)} ชม.</span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          
-                          {Object.keys(emp.leaveHours).length > 0 && (
-                            <div>
-                              <h4 className="font-semibold mb-2 flex items-center justify-between">
-                                การลา (Leave)
-                                <span className="text-sm font-normal text-muted-foreground">
-                                  {emp.totalLeaveHours.toFixed(2)} ชม.
-                                </span>
-                              </h4>
-                              <div className="space-y-1">
-                                {Object.entries(emp.leaveHours).map(([leaveType, hours]) => (
-                                  <div key={leaveType} className="flex justify-between text-sm pl-4">
-                                    <span>• {leaveType}</span>
-                                    <span className="font-medium">{(hours as number).toFixed(2)} ชม.</span>
-                                  </div>
-                                ))}
+                            )}
+
+                            {Object.keys(emp.nonChargeHours).length > 0 && (
+                              <div>
+                                <h4 className="font-semibold mb-2 flex items-center justify-between">
+                                  งานไม่คิดค่าใช้จ่าย (Non-Charge)
+                                  <span className="text-sm font-normal text-muted-foreground">
+                                    {emp.totalNonChargeHours.toFixed(2)} ชม.
+                                  </span>
+                                </h4>
+                                <div className="space-y-1">
+                                  {Object.entries(emp.nonChargeHours).map(([activity, hours]) => (
+                                    <div key={activity} className="flex justify-between text-sm pl-4">
+                                      <span>• {activity}</span>
+                                      <span className="font-medium">{(hours as number).toFixed(2)} ชม.</span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                            )}
+
+                            {Object.keys(emp.leaveHours).length > 0 && (
+                              <div>
+                                <h4 className="font-semibold mb-2 flex items-center justify-between">
+                                  การลา (Leave)
+                                  <span className="text-sm font-normal text-muted-foreground">
+                                    {emp.totalLeaveHours.toFixed(2)} ชม.
+                                  </span>
+                                </h4>
+                                <div className="space-y-1">
+                                  {Object.entries(emp.leaveHours).map(([leaveType, hours]) => (
+                                    <div key={leaveType} className="flex justify-between text-sm pl-4">
+                                      <span>• {leaveType}</span>
+                                      <span className="font-medium">{(hours as number).toFixed(2)} ชม.</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
                   </div>
                 )}
               </>
@@ -701,8 +701,8 @@ export const AssignmentReports = () => {
               <>
                 <div className="flex justify-between items-center gap-4">
                   <div className="text-sm text-muted-foreground">
-                    {showReports && clientReportData.length > 0 
-                      ? `พบ ${clientReportData.length} ลูกค้า` 
+                    {showReports && clientReportData.length > 0
+                      ? `พบ ${clientReportData.length} ลูกค้า`
                       : 'กรุณากด "สร้างรายงาน" เพื่อดูข้อมูล'}
                   </div>
                   <div className="flex items-center gap-2">
@@ -734,56 +734,56 @@ export const AssignmentReports = () => {
                 ) : (
                   <div className="space-y-4">
                     {clientReportData
-                      .filter(client => 
+                      .filter(client =>
                         searchTerm === '' ||
                         client.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         client.clientCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        client.employees.some((emp: any) => 
+                        client.employees.some((emp: any) =>
                           emp.name.toLowerCase().includes(searchTerm.toLowerCase())
                         )
                       )
                       .map((client, idx) => (
-                      <Card key={idx}>
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle>{client.clientName}</CardTitle>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {client.clientCode}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold">
-                                {client.totalHours.toFixed(2)}
+                        <Card key={idx}>
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle>{client.clientName}</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {client.clientCode}
+                                </p>
                               </div>
-                              <p className="text-sm text-muted-foreground">ชั่วโมงรวม</p>
+                              <div className="text-right">
+                                <div className="text-2xl font-bold">
+                                  {client.totalHours.toFixed(2)}
+                                </div>
+                                <p className="text-sm text-muted-foreground">ชั่วโมงรวม</p>
+                              </div>
                             </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="border rounded-lg overflow-hidden">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>พนักงาน</TableHead>
-                                  <TableHead>ตำแหน่ง</TableHead>
-                                  <TableHead className="text-right">ชั่วโมง</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {client.employees.map((emp: any, empIdx: number) => (
-                                  <TableRow key={empIdx}>
-                                    <TableCell>{emp.name}</TableCell>
-                                    <TableCell>{emp.position}</TableCell>
-                                    <TableCell className="text-right font-medium">{emp.hours.toFixed(2)} ชม.</TableCell>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>พนักงาน</TableHead>
+                                    <TableHead>ตำแหน่ง</TableHead>
+                                    <TableHead className="text-right">ชั่วโมง</TableHead>
                                   </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                                </TableHeader>
+                                <TableBody>
+                                  {client.employees.map((emp: any, empIdx: number) => (
+                                    <TableRow key={empIdx}>
+                                      <TableCell>{emp.name}</TableCell>
+                                      <TableCell>{emp.position}</TableCell>
+                                      <TableCell className="text-right font-medium">{emp.hours.toFixed(2)} ชม.</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                   </div>
                 )}
               </>
@@ -793,8 +793,8 @@ export const AssignmentReports = () => {
               <>
                 <div className="flex justify-between items-center gap-4">
                   <div className="text-sm text-muted-foreground">
-                    {showReports && nonChargeReportData.length > 0 
-                      ? `พบ ${nonChargeReportData.length} กิจกรรม` 
+                    {showReports && nonChargeReportData.length > 0
+                      ? `พบ ${nonChargeReportData.length} กิจกรรม`
                       : 'กรุณากด "สร้างรายงาน" เพื่อดูข้อมูล'}
                   </div>
                   <div className="flex items-center gap-2">
@@ -826,58 +826,58 @@ export const AssignmentReports = () => {
                 ) : (
                   <div className="space-y-4">
                     {nonChargeReportData
-                      .filter(activity => 
+                      .filter(activity =>
                         searchTerm === '' ||
                         activity.activityName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        activity.employees.some((emp: any) => 
+                        activity.employees.some((emp: any) =>
                           emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           emp.employeeCode.toLowerCase().includes(searchTerm.toLowerCase())
                         )
                       )
                       .map((activity, idx) => (
-                      <Card key={idx}>
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <CardTitle>{activity.activityName}</CardTitle>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                กิจกรรม Non-Charge
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold">
-                                {activity.totalHours.toFixed(2)}
+                        <Card key={idx}>
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle>{activity.activityName}</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  กิจกรรม Non-Charge
+                                </p>
                               </div>
-                              <p className="text-sm text-muted-foreground">ชั่วโมงรวม</p>
+                              <div className="text-right">
+                                <div className="text-2xl font-bold">
+                                  {activity.totalHours.toFixed(2)}
+                                </div>
+                                <p className="text-sm text-muted-foreground">ชั่วโมงรวม</p>
+                              </div>
                             </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="border rounded-lg overflow-hidden">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>รหัสพนักงาน</TableHead>
-                                  <TableHead>ชื่อ</TableHead>
-                                  <TableHead>ตำแหน่ง</TableHead>
-                                  <TableHead className="text-right">ชั่วโมง</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {activity.employees.map((emp: any, empIdx: number) => (
-                                  <TableRow key={empIdx}>
-                                    <TableCell>{emp.employeeCode}</TableCell>
-                                    <TableCell>{emp.name}</TableCell>
-                                    <TableCell>{emp.position}</TableCell>
-                                    <TableCell className="text-right font-medium">{emp.hours.toFixed(2)} ชม.</TableCell>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="border rounded-lg overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>รหัสพนักงาน</TableHead>
+                                    <TableHead>ชื่อ</TableHead>
+                                    <TableHead>ตำแหน่ง</TableHead>
+                                    <TableHead className="text-right">ชั่วโมง</TableHead>
                                   </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                                </TableHeader>
+                                <TableBody>
+                                  {activity.employees.map((emp: any, empIdx: number) => (
+                                    <TableRow key={empIdx}>
+                                      <TableCell>{emp.employeeCode}</TableCell>
+                                      <TableCell>{emp.name}</TableCell>
+                                      <TableCell>{emp.position}</TableCell>
+                                      <TableCell className="text-right font-medium">{emp.hours.toFixed(2)} ชม.</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                   </div>
                 )}
               </>
@@ -887,8 +887,8 @@ export const AssignmentReports = () => {
               <>
                 <div className="flex justify-between items-center gap-4">
                   <div className="text-sm text-muted-foreground">
-                    {showReports && leaveReportData.length > 0 
-                      ? `พบ ${leaveReportData.length} รายการ` 
+                    {showReports && leaveReportData.length > 0
+                      ? `พบ ${leaveReportData.length} รายการ`
                       : 'กรุณากด "สร้างรายงาน" เพื่อดูข้อมูล'}
                   </div>
                   <div className="flex items-center gap-2">
@@ -939,7 +939,7 @@ export const AssignmentReports = () => {
                       </TableHeader>
                       <TableBody>
                         {leaveReportData
-                          .filter(leave => 
+                          .filter(leave =>
                             searchTerm === '' ||
                             leave.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             leave.employeeCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -947,22 +947,22 @@ export const AssignmentReports = () => {
                             leave.position.toLowerCase().includes(searchTerm.toLowerCase())
                           )
                           .map((leave, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell>{leave.employeeCode}</TableCell>
-                            <TableCell>{leave.employeeName}</TableCell>
-                            <TableCell>{leave.position}</TableCell>
-                            <TableCell>{leave.leaveType}</TableCell>
-                            <TableCell>{leave.startDate}</TableCell>
-                            <TableCell>{leave.endDate}</TableCell>
-                            <TableCell>{leave.startTime}</TableCell>
-                            <TableCell>{leave.endTime}</TableCell>
-                            <TableCell className="text-right font-medium">{leave.days}</TableCell>
-                            <TableCell className="text-right font-medium">{leave.hours}</TableCell>
-                            <TableCell className="max-w-xs truncate">{leave.reason}</TableCell>
-                            <TableCell>{leave.approvedBy}</TableCell>
-                            <TableCell>{leave.partnerApprovedBy}</TableCell>
-                          </TableRow>
-                        ))}
+                            <TableRow key={idx}>
+                              <TableCell>{leave.employeeCode}</TableCell>
+                              <TableCell>{leave.employeeName}</TableCell>
+                              <TableCell>{leave.position}</TableCell>
+                              <TableCell>{leave.leaveType}</TableCell>
+                              <TableCell>{leave.startDate}</TableCell>
+                              <TableCell>{leave.endDate}</TableCell>
+                              <TableCell>{leave.startTime}</TableCell>
+                              <TableCell>{leave.endTime}</TableCell>
+                              <TableCell className="text-right font-medium">{leave.days}</TableCell>
+                              <TableCell className="text-right font-medium">{leave.hours}</TableCell>
+                              <TableCell className="max-w-xs truncate">{leave.reason}</TableCell>
+                              <TableCell>{leave.approvedBy}</TableCell>
+                              <TableCell>{leave.partnerApprovedBy}</TableCell>
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                   </div>

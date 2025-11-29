@@ -9,7 +9,13 @@ ADD COLUMN IF NOT EXISTS cancelled_at timestamp with time zone;
 CREATE POLICY "Partners can cancel any leave" 
 ON public.leaves 
 FOR UPDATE 
-USING (has_role(auth.uid(), 'super_admin'));
+USING (
+  EXISTS (
+    SELECT 1 FROM public.user_roles 
+    WHERE user_id = auth.uid() 
+    AND role = 'super_admin'
+  )
+);
 
 -- Create function to check if user can approve leaves
 CREATE OR REPLACE FUNCTION public.can_approve_leaves(_user_id uuid)

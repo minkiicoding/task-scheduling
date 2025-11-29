@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Enhanced Design System with Modern Premium Aesthetics */
 
 @layer base {
   :root {
@@ -17,72 +15,91 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 20%;
 
-    --primary: 215 80% 45%;
+    /* Rich primary color palette */
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 30% 96%;
+    --secondary: 210 40% 96%;
     --secondary-foreground: 215 25% 20%;
 
-    --muted: 210 30% 96%;
-    --muted-foreground: 215 20% 35%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 20% 40%;
 
-    --accent: 195 85% 50%;
+    /* Modern accent with vibrant cyan */
+    --accent: 189 94% 43%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 215 20% 90%;
-    --input: 215 20% 90%;
-    --ring: 215 80% 45%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(215 80% 45%), hsl(195 85% 50%));
-    --shadow-elegant: 0 10px 30px -10px hsl(215 80% 45% / 0.2);
+    /* Premium gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(189 94% 43%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(221 83% 53%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(221 83% 53%) 100%);
+    
+    /* Elegant shadows */
+    --shadow-sm: 0 2px 4px -1px hsl(221 83% 53% / 0.06), 0 1px 2px -1px hsl(221 83% 53% / 0.04);
+    --shadow-md: 0 4px 6px -1px hsl(221 83% 53% / 0.1), 0 2px 4px -1px hsl(221 83% 53% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(221 83% 53% / 0.1), 0 4px 6px -2px hsl(221 83% 53% / 0.05);
+    --shadow-xl: 0 20px 25px -5px hsl(221 83% 53% / 0.15), 0 10px 10px -5px hsl(221 83% 53% / 0.08);
+    --shadow-elegant: 0 20px 40px -15px hsl(221 83% 53% / 0.25);
+    
+    /* Smooth transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
   .dark {
-    --background: 215 30% 10%;
+    --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
-    --card: 215 25% 15%;
+    --card: 222 47% 14%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 215 25% 15%;
+    --popover: 222 47% 14%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 215 80% 55%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
 
-    --secondary: 215 25% 20%;
+    --secondary: 222 47% 20%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 215 25% 20%;
+    --muted: 222 47% 20%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 195 85% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 189 94% 43%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 222 47% 11%;
 
-    --border: 215 25% 25%;
-    --input: 215 25% 25%;
-    --ring: 215 80% 55%;
+    --border: 222 47% 20%;
+    --input: 222 47% 20%;
+    --ring: 217 91% 60%;
+
+    /* Dark mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(189 94% 43%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(217 91% 60%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(217 91% 60%) 100%);
   }
 }
 
@@ -92,6 +109,125 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Enhanced scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-secondary;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/40 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/60;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .bg-gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+
+  .bg-gradient-accent {
+    background: var(--gradient-accent);
+  }
+
+  .shadow-elegant {
+    box-shadow: var(--shadow-elegant);
+  }
+
+  .shadow-sm-custom {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shadow-md-custom {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-lg-custom {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .shadow-xl-custom {
+    box-shadow: var(--shadow-xl);
+  }
+
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+
+  .transition-bounce {
+    transition: var(--transition-bounce);
+  }
+
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/70 dark:bg-card/70 backdrop-blur-xl border border-white/20 dark:border-white/10;
+  }
+
+  /* Animated gradient background */
+  .bg-animated-gradient {
+    background: linear-gradient(135deg, hsl(221 83% 53%), hsl(189 94% 43%), hsl(262 83% 58%));
+    background-size: 200% 200%;
+    animation: gradientShift 15s ease infinite;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-smooth;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-1 shadow-lg-custom;
+  }
+
+  /* Fade in animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  /* Scale in animation */
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
   }
 }
